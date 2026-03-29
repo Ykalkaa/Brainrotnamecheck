@@ -38,7 +38,6 @@ class PingHandler(BaseHTTPRequestHandler):
         self.wfile.write(b"OK")
 
     def do_HEAD(self):
-        # ЭТОГО НЕ ХВАТАЛО: теперь бот ответит "Я жив" на проверку мониторинга
         self.send_response(200)
         self.end_headers()
 
@@ -46,9 +45,7 @@ class PingHandler(BaseHTTPRequestHandler):
         pass
 
 def run_server():
-    # Render сам скажет боту, какой порт использовать через переменную PORT
-    port = int(os.environ.get("PORT", 8080)) 
-    server = HTTPServer(("0.0.0.0", port), PingHandler)
+    server = HTTPServer(("0.0.0.0", 8080), PingHandler)
     server.serve_forever()
 
 @dp.message(F.photo)
