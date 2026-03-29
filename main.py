@@ -11,11 +11,11 @@ from aiogram.types import Message
 logging.basicConfig(level=logging.INFO)
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-OPENROUTER_KEY = os.environ.get("OPENROUTER_KEY")
+GEMINI_KEY = os.environ.get("GEMINI_KEY")
 
 client = AsyncOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_KEY
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+    api_key=GEMINI_KEY
 )
 
 bot = Bot(token=TELEGRAM_TOKEN)
@@ -59,7 +59,7 @@ async def handle_photo(message: Message):
 
         response = await asyncio.wait_for(
             client.chat.completions.create(
-                model="openrouter/free",
+                model="gemini-2.0-flash",
                 messages=[
                     {
                         "role": "user",
