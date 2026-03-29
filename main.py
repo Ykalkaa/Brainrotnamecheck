@@ -59,7 +59,7 @@ async def handle_photo(message: Message):
 
         response = await asyncio.wait_for(
             client.chat.completions.create(
-                model="google/gemini-2.0-flash-exp:free",
+                model="openrouter/free",
                 messages=[
                     {
                         "role": "user",
