@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import os
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from openai import AsyncOpenAI
 import base64
 from aiogram import Bot, Dispatcher, F
@@ -27,6 +29,18 @@ PROMPT = (
     "Например: ✨ La Grande Combinasion 100M/s Divine 💫👑 "
     "Выводи только то что реально видно на экране. Без лишних слов."
 )
+
+class PingHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+    def log_message(self, format, *args):
+        pass
+
+def run_server():
+    server = HTTPServer(("0.0.0.0", 8080), PingHandler)
+    server.serve_forever()
 
 @dp.message(F.photo)
 async def handle_photo(message: Message):
@@ -66,6 +80,7 @@ async def cmd_start(message: Message):
     await message.answer("Здарова! Кидай скриншот с персонажами Roblox! 👾")
 
 async def main():
+    threading.Thread(target=run_server, daemon=True).start()
     print("=== БОТ ЗАПУЩЕН И ЖДЕТ КАРТИНКИ ===")
     await dp.start_polling(bot)
 
