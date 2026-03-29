@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from openai import AsyncOpenAI
 import base64
 from aiogram import Bot, Dispatcher, F
@@ -7,8 +8,8 @@ from aiogram.types import Message
 
 logging.basicConfig(level=logging.INFO)
 
-TELEGRAM_TOKEN = "8560658554:AAHwoU_OaYfBEatoVyddsEM8QaUoaHV6vq0"
-OPENROUTER_KEY = "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"
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+OPENROUTER_KEY = os.environ.get("OPENROUTER_KEY")
 
 client = AsyncOpenAI(
     base_url="https://openrouter.ai/api/v1",
@@ -20,14 +21,13 @@ dp = Dispatcher()
 
 PROMPT = (
     "Ты — анализатор персонажей из игры Roblox Brainrot. "
-    "На скриншоте найди ВСЕХ персонажей у которых видно имя. "
+    "На скриншоте найди ТОЛЬКО персонажей у которых видно имя и прибыль (M/s, B/s, T/s). "
     "Для каждого персонажа выведи ОДНУ строку в формате: "
     "[эмодзи рейтинга] [Название персонажа] [прибыль] [мутация если есть] [эмодзи]. "
     "Например: ✨ La Grande Combinasion 100M/s Divine 💫👑 "
-    "Прибыль — это ЖЁЛТЫЙ текст рядом с именем. НЕ бери зелёный Collect. "
-    "Если прибыль не видна — пиши ❓ вместо неё. НЕ придумывай цифры! "
     "Выводи только то что реально видно на экране. Без лишних слов."
 )
+
 @dp.message(F.photo)
 async def handle_photo(message: Message):
     status_msg = await message.answer("Считываю брейнрот... 🛠️")
