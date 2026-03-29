@@ -24,6 +24,7 @@ dp = Dispatcher()
 PROMPT = (
     "Ты — анализатор персонажей из игры Roblox Brainrot. "
     "На скриншоте найди ТОЛЬКО персонажей у которых видно имя и прибыль (M/s, B/s, T/s). "
+    "Если на экране нет персонажей с именем и прибылью — напиши только: Персонажей не найдено 🤷 "
     "Для каждого персонажа выведи ОДНУ строку в формате: "
     "[эмодзи рейтинга] [Название персонажа] [прибыль] [мутация если есть] [эмодзи]. "
     "Например: ✨ La Grande Combinasion 100M/s Divine 💫👑 "
@@ -51,17 +52,20 @@ async def handle_photo(message: Message):
         photo_bytes = await bot.download_file(file.file_path)
         image_data = base64.b64encode(photo_bytes.read()).decode("utf-8")
 
-        response = await client.chat.completions.create(
-            model="openrouter/free",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": PROMPT},
-                        {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}}
-                    ]
-                }
-            ]
+        response = await asyncio.wait_for(
+            client.chat.completions.create(
+                model="openrouter/free",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": PROMPT},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}}
+                        ]
+                    }
+                ]
+            ),
+            timeout=30
         )
 
         await status_msg.delete()
@@ -69,8 +73,10 @@ async def handle_photo(message: Message):
         if result:
             await message.answer(result)
         else:
-            await message.answer("Нейронка вернула пустой ответ. Попробуй другой ракурс! 🤔")
+            await message.answer("Персонажей не найдено 🤷")
 
+    except asyncio.TimeoutError:
+        await status_msg.edit_text("⏱️ Нейронка не ответила за 30 сек. Попробуй ещё раз!")
     except Exception as e:
         logging.error(f"Ошибка: {e}")
         await status_msg.edit_text(f"Ошибка: {e}")
