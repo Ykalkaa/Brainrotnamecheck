@@ -46,7 +46,9 @@ class PingHandler(BaseHTTPRequestHandler):
         pass
 
 def run_server():
-    server = HTTPServer(("0.0.0.0", 8080), PingHandler)
+    # Render сам скажет боту, какой порт использовать через переменную PORT
+    port = int(os.environ.get("PORT", 8080)) 
+    server = HTTPServer(("0.0.0.0", port), PingHandler)
     server.serve_forever()
 
 @dp.message(F.photo)
