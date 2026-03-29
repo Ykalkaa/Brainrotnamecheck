@@ -36,6 +36,12 @@ class PingHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b"OK")
+
+    def do_HEAD(self):
+        # ЭТОГО НЕ ХВАТАЛО: теперь бот ответит "Я жив" на проверку мониторинга
+        self.send_response(200)
+        self.end_headers()
+
     def log_message(self, format, *args):
         pass
 
