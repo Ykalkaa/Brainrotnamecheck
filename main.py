@@ -22,13 +22,36 @@ bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
 PROMPT = (
-    "Ты — анализатор персонажей из игры Roblox Brainrot. "
-    "На скриншоте найди ТОЛЬКО персонажей у которых видно имя и прибыль (M/s, B/s, T/s). "
-    "Если на экране нет персонажей с именем и прибылью — напиши только: Персонажей не найдено 🤷 "
-    "Для каждого персонажа выведи ОДНУ строку в формате: "
-    "[эмодзи рейтинга] [Название персонажа] [прибыль] [мутация если есть] [эмодзи]. "
-    "Например: ✨ La Grande Combinasion 100M/s Divine 💫👑 "
-    "Выводи только то что реально видно на экране. Без лишних слов."
+    "You are analyzing a Roblox Brainrot game screenshot. "
+    "Find ALL characters that have a visible name tag above them. "
+    "If no characters found write only: Персонажей не найдено 🤷\n\n"
+    "For each character output EXACTLY ONE line:\n"
+    "[mutation emoji] [Character Name] [income] [Mutation name if exists] [1-2 emojis matching appearance]\n\n"
+    "INCOME RULES:\n"
+    "- Income is YELLOW text near the name: $162.5M/s, $5B, $550M/s etc\n"
+    "- NEVER use GREEN text - that is Collect/offline cash, ignore it\n"
+    "- If income not visible write ❓\n\n"
+    "MUTATION RULES (word shown ABOVE character name):\n"
+    "- Rainbow = 🌈 and write 'Rainbow' in text\n"
+    "- Divine = ✨ and write 'Divine' in text\n"
+    "- Diamond = 💎 and write 'Diamond' in text\n"
+    "- Radioactive = ☢️ and write 'Radioactive' in text\n"
+    "- Gold = 🥇 and write 'Gold' in text\n"
+    "- Cursed = 👿 and write 'Cursed' in text\n"
+    "- Frozen = ❄️ and write 'Frozen' in text\n"
+    "- Burning = 🔥 and write 'Burning' in text\n"
+    "- Shiny = ⭐ and write 'Shiny' in text\n"
+    "- No mutation = ✨ write nothing\n"
+    "NEVER write: Secret, Common, Rare, Epic - those are rarity not mutation!\n\n"
+    "APPEARANCE EMOJIS: pick 1-2 based on what the character looks like:\n"
+    "snake=🐍, clock=🕐, food=🍕, robot=🤖, fire=🔥, ice=❄️, plant=🌿, "
+    "skull=💀, music=🎵, crown=👑, heart=💗, star=⭐, alien=👽 etc\n\n"
+    "Copy character NAME exactly as shown on screen, do not fix spelling!\n\n"
+    "Example output:\n"
+    "🌈 Mariachi Corazoni $162.5M/s Rainbow 🎵👑\n"
+    "☢️ Chicleteira Noelteira $127M/s Radioactive 🟢\n"
+    "✨ La Grande Combinasion $100M/s Divine 👑\n\n"
+    "Output ONLY the character lines, nothing else."
 )
 
 class PingHandler(BaseHTTPRequestHandler):
@@ -36,11 +59,9 @@ class PingHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b"OK")
-
     def do_HEAD(self):
         self.send_response(200)
         self.end_headers()
-
     def log_message(self, format, *args):
         pass
 
@@ -70,7 +91,7 @@ async def handle_photo(message: Message):
                     }
                 ]
             ),
-            timeout=30
+            timeout=60
         )
 
         await status_msg.delete()
@@ -81,7 +102,7 @@ async def handle_photo(message: Message):
             await message.answer("Персонажей не найдено 🤷")
 
     except asyncio.TimeoutError:
-        await status_msg.edit_text("⏱️ Нейронка не ответила за 30 сек. Попробуй ещё раз!")
+        await status_msg.edit_text("⏱️ Нейронка не ответила за 60 сек. Попробуй ещё раз!")
     except Exception as e:
         logging.error(f"Ошибка: {e}")
         await status_msg.edit_text(f"Ошибка: {e}")
