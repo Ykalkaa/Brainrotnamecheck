@@ -83,7 +83,7 @@ async def handle_photo(message: Message):
         photo_bytes = await bot.download_file(file.file_path)
         image_data = base64.b64encode(photo_bytes.read()).decode("utf-8")
 
-        for attempt in range(len(OPENROUTER_KEYS)):
+        for attempt in range(len(OPENROUTER_KEYS) * 3):
             try:
                 client = AsyncOpenAI(
                     base_url="https://openrouter.ai/api/v1",
@@ -109,9 +109,13 @@ async def handle_photo(message: Message):
                 if "429" in str(e):
                     logging.warning(f"Ключ {current_key_index+1} исчерпан, переключаю...")
                     current_key_index = (current_key_index + 1) % len(OPENROUTER_KEYS)
-                    if attempt == len(OPENROUTER_KEYS) - 1:
+                    if attempt >= len(OPENROUTER_KEYS) - 1:
                         await status_msg.edit_text("❌ Все ключи исчерпаны на сегодня. Попробуй завтра!")
                         return
+                    continue
+                elif "404" in str(e):
+                    logging.warning(f"404 от провайдера, повтор {attempt+1}...")
+                    await asyncio.sleep(2)
                     continue
                 raise e
 
