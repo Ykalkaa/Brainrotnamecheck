@@ -11,12 +11,16 @@ from aiogram.types import Message
 logging.basicConfig(level=logging.INFO)
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-OPENROUTER_KEY = os.environ.get("OPENROUTER_KEY")
 
-client = AsyncOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_KEY
-)
+OPENROUTER_KEYS = [
+    k for k in [
+        os.environ.get("OPENROUTER_KEY_1"),
+        os.environ.get("OPENROUTER_KEY_2"),
+        os.environ.get("OPENROUTER_KEY_3"),
+    ] if k
+]
+
+current_key_index = 0
 
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
@@ -71,6 +75,7 @@ def run_server():
 
 @dp.message(F.photo)
 async def handle_photo(message: Message):
+    global current_key_index
     status_msg = await message.answer("Считываю брейнрот... 🛠️")
     try:
         photo_id = message.photo[-1].file_id
@@ -78,21 +83,37 @@ async def handle_photo(message: Message):
         photo_bytes = await bot.download_file(file.file_path)
         image_data = base64.b64encode(photo_bytes.read()).decode("utf-8")
 
-        response = await asyncio.wait_for(
-            client.chat.completions.create(
-                model="openrouter/free",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": PROMPT},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}}
+        for attempt in range(len(OPENROUTER_KEYS)):
+            try:
+                client = AsyncOpenAI(
+                    base_url="https://openrouter.ai/api/v1",
+                    api_key=OPENROUTER_KEYS[current_key_index]
+                )
+                response = await asyncio.wait_for(
+                    client.chat.completions.create(
+                        model="openrouter/free",
+                        messages=[
+                            {
+                                "role": "user",
+                                "content": [
+                                    {"type": "text", "text": PROMPT},
+                                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}}
+                                ]
+                            }
                         ]
-                    }
-                ]
-            ),
-            timeout=60
-        )
+                    ),
+                    timeout=60
+                )
+                break
+            except Exception as e:
+                if "429" in str(e):
+                    logging.warning(f"Ключ {current_key_index+1} исчерпан, переключаю...")
+                    current_key_index = (current_key_index + 1) % len(OPENROUTER_KEYS)
+                    if attempt == len(OPENROUTER_KEYS) - 1:
+                        await status_msg.edit_text("❌ Все ключи исчерпаны на сегодня. Попробуй завтра!")
+                        return
+                    continue
+                raise e
 
         await status_msg.delete()
         result = response.choices[0].message.content
