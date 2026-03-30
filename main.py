@@ -59,7 +59,7 @@ async def handle_photo(message: Message):
 
         response = await asyncio.wait_for(
             client.chat.completions.create(
-                model="openrouter/free",
+                model="meta-llama/llama-4-maverick:free",
                 messages=[
                     {
                         "role": "user",
